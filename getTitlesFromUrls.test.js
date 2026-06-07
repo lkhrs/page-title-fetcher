@@ -1,9 +1,9 @@
-const assert = require('node:assert/strict');
-const { once } = require('node:events');
-const http = require('node:http');
-const test = require('node:test');
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import http from 'node:http';
+import test from 'node:test';
 
-const { fetchSitemapXml, getPageTitle } = require('./getTitlesFromUrls');
+import { fetchSitemapXml, getPageTitle } from './getTitlesFromUrls.js';
 
 const withServer = async (handler, callback) => {
   const server = http.createServer(handler);

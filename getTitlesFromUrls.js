@@ -1,8 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const cheerio = require('cheerio');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const xml2js = require('xml2js');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as cheerio from 'cheerio';
+import csvWriter from 'csv-writer';
+import xml2js from 'xml2js';
+
+const { createObjectCsvWriter } = csvWriter;
+const __filename = fileURLToPath(import.meta.url);
+const scriptDir = path.dirname(__filename);
 
 const fetchText = async (url) => {
   const response = await fetch(url);
@@ -19,7 +24,7 @@ const fetchText = async (url) => {
  * @param {string} url - The URL of the sitemap.xml file.
  * @returns {Promise<string>} The content of the sitemap.xml file.
  */
-const fetchSitemapXml = async (url) => {
+export const fetchSitemapXml = async (url) => {
   try {
     return await fetchText(url);
   } catch (error) {
@@ -33,7 +38,7 @@ const fetchSitemapXml = async (url) => {
  * @param {string} xmlContent - The content of the sitemap.xml file.
  * @returns {Promise<string[]>} An array of URLs.
  */
-const parseSitemapXml = async (xmlContent) => {
+export const parseSitemapXml = async (xmlContent) => {
   try {
     const parsedData = await xml2js.parseStringPromise(xmlContent);
     const urlArray = parsedData.urlset.url.map(url => url.loc[0]);
@@ -49,7 +54,7 @@ const parseSitemapXml = async (xmlContent) => {
  * @param {string} url - The URL of the page.
  * @returns {Promise<string>} The page title.
  */
-const getPageTitle = async (url) => {
+export const getPageTitle = async (url) => {
   try {
     const html = await fetchText(url);
     const $ = cheerio.load(html);
@@ -66,7 +71,7 @@ const getPageTitle = async (url) => {
  * @param {string[]} urls - An array of URLs.
  * @returns {Promise<{ url: string, pageTitle: string }[]>} An array of objects containing the URL and page title.
  */
-const processUrls = async (urls) => {
+export const processUrls = async (urls) => {
   const titles = [];
 
   for (const url of urls) {
@@ -86,7 +91,7 @@ const processUrls = async (urls) => {
  * node getTitlesFromUrls.js https://www.example.com/sitemap.xml
  * // Page titles extracted and saved to output/page-titles-20210901123456.csv
  */
-const main = async () => {
+export const main = async () => {
   try {
     const sitemapUrl = process.argv[2];
 
@@ -118,7 +123,7 @@ const main = async () => {
     const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
     
     // Create an output directory if it doesn't exist
-    const outputDir = path.join(__dirname, 'output');
+    const outputDir = path.join(scriptDir, 'output');
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
@@ -127,7 +132,7 @@ const main = async () => {
     const outputPath = path.join(outputDir, `page-titles-${timestamp}.csv`);
 
     // Create a CSV writer and write extracted titles to a CSV file
-    const csvWriter = createCsvWriter({
+    const csvWriter = createObjectCsvWriter({
       path: outputPath,
       header: [
         { id: 'pageTitle', title: 'Page Title' },
@@ -142,14 +147,6 @@ const main = async () => {
   }
 };
 
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   main();
 }
-
-module.exports = {
-  fetchSitemapXml,
-  parseSitemapXml,
-  getPageTitle,
-  processUrls,
-  main
-};
