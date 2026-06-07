@@ -1,9 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const cheerio = require('cheerio');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const xml2js = require('xml2js');
+
+const fetchText = async (url) => {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  }
+
+  return response.text();
+};
 
 /**
  * Fetches the content of a sitemap.xml file from a given URL.
@@ -12,8 +21,7 @@ const xml2js = require('xml2js');
  */
 const fetchSitemapXml = async (url) => {
   try {
-    const response = await axios.get(url);
-    return response.data;
+    return await fetchText(url);
   } catch (error) {
     console.error(`Error fetching sitemap.xml from ${url}: ${error.message}`);
     return null;
@@ -43,8 +51,8 @@ const parseSitemapXml = async (xmlContent) => {
  */
 const getPageTitle = async (url) => {
   try {
-    const response = await axios.get(url);
-    const $ = cheerio.load(response.data);
+    const html = await fetchText(url);
+    const $ = cheerio.load(html);
     const pageTitle = $('title').text().trim();
     return pageTitle;
   } catch (error) {
@@ -78,7 +86,7 @@ const processUrls = async (urls) => {
  * node getTitlesFromUrls.js https://www.example.com/sitemap.xml
  * // Page titles extracted and saved to output/page-titles-20210901123456.csv
  */
-(async () => {
+const main = async () => {
   try {
     const sitemapUrl = process.argv[2];
 
@@ -132,4 +140,16 @@ const processUrls = async (urls) => {
   } catch (error) {
     console.error('An error occurred:', error);
   }
-})();
+};
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  fetchSitemapXml,
+  parseSitemapXml,
+  getPageTitle,
+  processUrls,
+  main
+};
