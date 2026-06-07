@@ -3,7 +3,7 @@ Takes an xml sitemap URL as a command-line argument and outputs a CSV file with 
 ## Install dependencies
 
 ```shell
-npm install
+pnpm install
 ```
 
 ## Usage
